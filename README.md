@@ -9,14 +9,14 @@ All files with an exploit implemented will create a bytearray object that can wr
 |Link|Introduced In|Patched In|Exploit Implemented|
 |-|-|-|-|
 |[\_\_classdict\_\_ bug](./bugs/classdict_bug.py)|3.12.0|N/A|Yes|
-|[bytearray bug](./bugs/bytearray_bug.py)||N/A|Yes|
+|[bytearray bug](./bugs/bytearray_bug.py)||[3.13.6](https://github.com/python/cpython/pull/132379)|Yes|
 |[calliter bug](./bugs/calliter_bug.py)||N/A|Yes|
 |[cell bug](./bugs/cell_bug.py)||3.13.1|Yes|
 |[decimal.Context Bug](./bugs/decimal_context_bug.py)||N/A|Yes|
 |[divmod bug](./bugs/divmod_bug.py)||N/A|Yes|
 |[functools.partial bug](./bugs/partial_bug.py)|[3.12.3](https://github.com/python/cpython/commit/8f5be78bce95deb338e2e1cf13a0a579b3b42dd2)|N/A|Yes|
 |[GenericAlias repr bug](./bugs/ga_repr_bug.py)|3.12.0|N/A|Yes|
-|[GenericAlias subscript bug](./bugs/ga_subscr_bug.py)|3.11.0|[3.13.8](https://github.com/python/cpython/issues/138479)|Yes|
+|[GenericAlias subscript bug](./bugs/ga_subscr_bug.py)|3.11.0|[3.13.8](https://github.com/python/cpython/pull/138482)|Yes|
 |[iter bug](./bugs/iter_bug.py)||N/A|Yes|
 |[io.BytesIO bug](./bugs/bytesio_bug.py)|3.12.0|N/A|Yes|
 |[itertools.accumulate bug](./bugs/accumulate_bug.py)||N/A|Yes|
