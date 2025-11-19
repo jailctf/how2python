@@ -26,7 +26,7 @@ All files with an exploit implemented will create a bytearray object that can wr
 |[mappingproxy bug](./bugs/mappingproxy_bug.py)||N/A|Yes|
 |[memoryview richcompare bug](./bugs/memoryview_cmp_bug.py)||N/A|Yes|
 |[memoryview subscript bug](./bugs/memoryview_subscr_bug.py)||N/A|Yes|
-|[mro bug](./bugs/mro_bug.py)|3.10.0|N/A|Yes|
+|[mro bug](./bugs/mro_bug.py)|3.10.0|[3.14.0](https://github.com/python/cpython/pull/127924)|Yes|
 |[namespace bug](./bugs/namespace_bug.py)||N/A|Yes|
 |[OSError bug](./bugs/oserror_bug.py)||N/A|Yes|
 |[try/except* bug](./bugs/try_except_star_bug.py)|3.11.0|3.13.2|Yes|
