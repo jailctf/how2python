@@ -62,6 +62,10 @@ bytearray_ass_subscript(PyByteArrayObject *self, PyObject *index, PyObject *valu
 # This one has some interesting history, you can check out the bug report here:
 # https://github.com/python/cpython/issues/91153
 
+from common import check_pyversion
+
+check_pyversion(patched_ver=(3, 13, 6))
+
 to_uaf = bytearray(bytearray.__basicsize__)
 
 class UAF:

