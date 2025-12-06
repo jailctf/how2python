@@ -76,11 +76,12 @@ def evil_bytearray_obj(add_metadata: bool=False) -> tuple[bytes, int]:
 
 def check_pyversion(*, patched_ver: tuple[int]=None, introduced_ver: tuple[int]=None) -> None:
     """
-    Docstring for check_pyversion
+    Helper function to print a warning message if a user tries running an exploit on a version the
+    exploit does not work in.
     
-    :param patched_ver: Description
+    :param patched_ver: The version the bug was patched in
     :type patched_ver: tuple[int]
-    :param introduced_ver: Description
+    :param introduced_ver: The version the bug was introduced in
     :type introduced_ver: tuple[int]
     """
     
