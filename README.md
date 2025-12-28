@@ -28,6 +28,7 @@ All files with an exploit implemented will create a bytearray object that can wr
 |[memoryview subscript bug](./bugs/memoryview_subscr_bug.py)||N/A|Yes|
 |[mro bug](./bugs/mro_bug.py)|3.10.0|[3.14.0](https://github.com/python/cpython/pull/127924)|Yes|
 |[namespace bug](./bugs/namespace_bug.py)||N/A|Yes|
+|[OrderedDict copy bug](./bugs/ordereddict_copy_bug.py)|[3.5.0](https://github.com/python/cpython/commit/96c6af9b207c188c52ac53ce87bb7f2dea3f328b)|N/A|Linux only|
 |[OSError bug](./bugs/oserror_bug.py)||N/A|Yes|
 |[try/except* bug](./bugs/try_except_star_bug.py)|3.11.0|3.13.2|Yes|
 
